@@ -162,6 +162,8 @@
 		<button type="button" onclick={() => run((instance) => instance.chain().focus().redo().run())}
 			>Redo</button
 		>
+	</div>
+	<div class="toolbar direction-toolbar" role="toolbar" aria-label="Text direction">
 		<button type="button" aria-pressed={active.dir === 'auto'} onclick={() => setDirection('auto')}
 			>Auto direction</button
 		>

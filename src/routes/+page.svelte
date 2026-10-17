@@ -518,6 +518,20 @@
 		return entryPresentation(next);
 	}
 
+	function formatWhen(value: string | null): string {
+		if (!value) {
+			return '';
+		}
+		const parsed = new Date(value);
+		if (Number.isNaN(parsed.getTime())) {
+			return value;
+		}
+		return new Intl.DateTimeFormat(undefined, {
+			dateStyle: 'medium',
+			timeStyle: 'short'
+		}).format(parsed);
+	}
+
 	async function openFile(fileName: string) {
 		if (!desktop || opening || entry?.fileName === fileName) {
 			return;
@@ -561,8 +575,9 @@
 </script>
 
 <main>
-	<header>
-		<h1>Yoman</h1>
+	<header class="app-header">
+		<p class="brand">Yoman</p>
+		<h1>Journal</h1>
 		<p class="lede">A private journal stored as Markdown files on this computer.</p>
 	</header>
 
@@ -603,16 +618,21 @@
 					<p>
 						<strong dir="auto">{snapshot.folderName}</strong>
 					</p>
-					<p class="meta" dir="auto">{snapshot.folderPath}</p>
-					<div class="actions">
+					<p class="meta folder-path" dir="auto">{snapshot.folderPath}</p>
+					<div class="sidebar-actions">
 						<button type="button" onclick={chooseFolder} disabled={picking || creating}>
 							{picking ? 'Waiting for the folder picker…' : 'Change folder'}
 						</button>
-						<button type="button" onclick={createNewEntry} disabled={creating || picking}>
+						<button
+							type="button"
+							class="primary"
+							onclick={createNewEntry}
+							disabled={creating || picking}
+						>
 							{creating ? 'Creating entry…' : 'New entry'}
 						</button>
 					</div>
-					<label class="title-field">
+					<label class="title-field search-field">
 						Search
 						<input
 							dir="auto"
@@ -660,7 +680,7 @@
 							}}>Clear search</button
 						>
 					{:else}
-						<p role="status">
+						<p class="count" role="status">
 							{visibleEntries.length}
 							{visibleEntries.length === 1 ? 'entry' : 'entries'}
 						</p>
@@ -673,8 +693,10 @@
 										aria-current={entry?.fileName === file.fileName ? 'true' : undefined}
 										onclick={() => openFile(file.fileName)}
 									>
-										<span dir="auto">{file.title}</span>
-										<span class="meta" dir="auto">{file.date ?? file.fileName}</span>
+										<span class="entry-name" dir="auto">{file.title}</span>
+										<span class="entry-date" dir="auto"
+											>{formatWhen(file.date) || file.fileName}</span
+										>
 									</button>
 								</li>
 							{/each}
@@ -682,7 +704,7 @@
 					{/if}
 				</aside>
 
-				<article class="panel" aria-labelledby="entry-title">
+				<article class="panel editor-panel" aria-labelledby="entry-title">
 					{#if opening}
 						<p role="status">Opening…</p>
 					{/if}
@@ -701,7 +723,7 @@
 							<h2 id="entry-title" dir="auto">{draftTitle || entry.fileName}</h2>
 							<button type="button" class="danger" onclick={askDelete}>Move to trash</button>
 						</div>
-						<label class="title-field">
+						<label class="title-field title-wide">
 							Title
 							<input
 								dir="auto"
@@ -711,22 +733,34 @@
 								disabled={!editable}
 							/>
 						</label>
-						<p class="meta" dir="auto">{entry.fileName}</p>
-						<p class="hint" role="status">
-							{editable ? statusText : 'This file is shown unchanged.'}
-						</p>
+						<dl class="meta-grid">
+							<div class="wide">
+								<dt>File</dt>
+								<dd dir="auto">{entry.fileName}</dd>
+							</div>
+							<div>
+								<dt>Status</dt>
+								<dd role="status">{editable ? statusText : 'Shown unchanged'}</dd>
+							</div>
+							{#if entry.date}
+								<div>
+									<dt>Created</dt>
+									<dd dir="auto">{formatWhen(entry.date)}</dd>
+								</div>
+							{/if}
+							{#if entry.updated}
+								<div>
+									<dt>Updated</dt>
+									<dd dir="auto">{formatWhen(entry.updated)}</dd>
+								</div>
+							{/if}
+						</dl>
 						{#if conflict}
 							<div class="actions">
 								<button type="button" onclick={reloadFromDisk}>Reload from disk</button>
 								<button type="button" onclick={keepMyVersion}>Keep my version</button>
 								<button type="button" onclick={saveAsCopy}>Save my version as a copy</button>
 							</div>
-						{/if}
-						{#if entry.date}
-							<p class="meta">Date: <span dir="auto">{entry.date}</span></p>
-						{/if}
-						{#if entry.updated}
-							<p class="meta">Updated: <span dir="auto">{entry.updated}</span></p>
 						{/if}
 						{#if editable}
 							<div class="tag-editor">
@@ -740,7 +774,7 @@
 									{/each}
 								</div>
 								<form
-									class="actions"
+									class="tag-form"
 									onsubmit={(event) => {
 										event.preventDefault();
 										addTag();
